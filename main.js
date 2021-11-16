@@ -1,12 +1,3 @@
-let p = 19
-let q = 17
-let n = q * p
-let d = 5
-let r
-let i
-let e = 1
-let str = 'Gachi'
-
 function checkeasy(num) {
 	for (let i = 3; i <= Math.sqrt(num); i++){
 		if ((num % i) == 0){
@@ -28,22 +19,38 @@ function isCoprime (a, b) {
 	}
 	return false;
 }
-for (d = 2; r != true; d++){
-    if (isCoprime(d, (p-1)*(q-1)) == true){
-	    r = true
+
+let p = 23
+let q = 29
+let n = q * p
+let f = (p-1) * (q-1)
+let r = false
+let e
+for (e = 2; r != true; e++){
+  if(e < f){
+    if(checkeasy(e) == true){
+      if(isCoprime (e, f)){
+        r = true
+        e++
+      }
     }
+  }
 }
-d -= 1
-r = false
-while((e*d) % ((p-1)*(q-1))!=1){
-	e++
-	}
-function strToNums(str) {
-	let u = []
-	for (let i = 0; i < str.lenght; i++) {
-		u[i] = i 
-	}
-	return u
+let d = 1
+while((d*e)%f != 1){
+  d++
 }
-let strs = strToNums(str)
-console.log(strs)
+let str = 'Bom'
+console.log(str)
+let P = []
+for(let i = 0; i < str.length; i++){
+  P.push(str.codePointAt(i))
+}
+console.log(P)
+let shifr = []
+for(let i = 0; i < str.length; i++){
+  shifr.push(P[i]**e%n)
+}
+console.log('shifr =',shifr)
+console.log('d =',d)
+console.log('n =',n)
