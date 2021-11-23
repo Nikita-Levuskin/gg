@@ -1,9 +1,8 @@
-let shifr = [56,471,274]
+let shifr = [ 56, 471, 274 ]
 let d = 493
 let n = 667
 let str = ''
 for (let i = 0; i < shifr.length; i++){
-  let y = shifr[i]**d%n
-  str += String.fromCharCode(y)
+  str += String.fromCharCode(Number(BigInt(shifr[i])**BigInt(d)%BigInt(n)))
 }
 console.log(str)
