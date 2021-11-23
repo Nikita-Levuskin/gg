@@ -49,7 +49,7 @@ for(let i = 0; i < str.length; i++){
 console.log(P)
 let shifr = []
 for(let i = 0; i < str.length; i++){
-  shifr.push(P[i]**e%n)
+  shifr.push(Number(BigInt(P[i])**BigInt(e)%BigInt(n)))
 }
 console.log('shifr =',shifr)
 console.log('d =',d)
