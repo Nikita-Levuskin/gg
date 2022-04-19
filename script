@@ -1,0 +1,59 @@
+let alphabetString = 'qwertyuiopasdfghjklzxcvbnm1234567890 QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?/;\'[].,!@#$%^&*()_+\\=-|`йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИИТЬ╔'
+let alphabet = Array.from(alphabetString)
+let alphabetLength = alphabet.length
+
+
+function encode(string, shift) {
+    let chars = Array.from(string)
+        .map(char => alphabet.indexOf(char))
+        .map(indexOfChar => (indexOfChar + shift))
+        .map(Math.abs)
+        .map(indexOfChar => indexOfChar % alphabetLength)
+        .map(indexOfChar => alphabet[indexOfChar])
+    
+    return charsToString(chars) 
+}
+
+function decode(string, shift) {
+    let negativeShift = 0 - shift
+    
+    console.log(negativeShift)
+    
+    return encode(string, negativeShift)
+}
+
+function charsToString(chars) {
+    let res = ""
+    
+    for (char of chars) {
+        res += char
+    }
+    
+    return res
+}
+
+let button1 = document.querySelector("#button1")
+let button2 = document.querySelector("#button2")
+button1.addEventListener("click",function(){
+	let text = document.querySelector("#text1").value
+	let shift = document.querySelector("#text3").value
+	let text1 = encode(text, shift)
+	let div = document.createElement("div")
+	div.append(text1)
+	document.querySelector("#output1").append(div)
+})
+
+button2.addEventListener("click",function(){
+	let text = document.querySelector("#text2").value	
+	let shift = document.querySelector("#text3").value
+	let text1 = decode(text, shift)
+	let div = document.createElement("div")
+	div.append(text1)
+	document.querySelector("#output2").append(div)
+})
+
+let selector = document.querySelector("#shifrator")
+
+selector.addEventListener("change",function(){
+	shifrators = selector.value
+})
