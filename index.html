@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8">
+		<title>Главная</title>
+		<style>
+			.wrap{
+				display: flex;
+				padding-bottom: 10px;
+				gap: 20px;
+			}
+			.outputs{
+				display: flex;
+				padding-bottom: 10px;
+				gap: 100px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrap">
+			<div>
+				<input type = "text" id = "text1">
+				<button id = "button1">send to shifr</button>
+			</div>
+			<div>
+				<input type = "text" id = "text2">
+				<button id = "button2">send to deshifr</button>
+			</div>
+			<select size="3" id="shifrator">
+				<option disabled>Выберите шифратор</option>
+				<option value="cezar">Цезарь</option>
+				<option value="ceza">Цезар</option>
+			</select>
+			<div>
+				<input type = "text" id = "text3">
+				<button id = "button3">password</button>
+			</div>
+		</div>
+		<div class="outputs">
+			<div>
+				<div>shifr:</div>
+				<div>-----</div>
+				<div id = "output1"></div>
+			</div>
+			<div>
+				<div>deshifr:</div>
+				<div>-------</div>
+				<div id = "output2"></div>
+			</div>
+		</div>
+		
+		<script src = "script.js"></script>
+	</body>
+</html>
