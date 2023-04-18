@@ -1,0 +1,60 @@
+Для настройки централизованного сбора журналов syslog на SRV1-MSK, следуйте этим шагам:
+
+1. Установите syslog-ng на SRV1-MSK: `sudo apt-get install syslog-ng`
+
+2. Отредактируйте файл конфигурации syslog-ng: `sudo nano /etc/syslog-ng/syslog-ng.conf`
+
+3. Добавьте следующий код в конец файла конфигурации:
+
+```
+source s_network {
+        tcp(ip(0.0.0.0) port(514));
+        udp(ip(0.0.0.0) port(514));
+};
+
+destination d_hosts {
+        file("/opt/logs/$HOST/$FACILITY.log"
+        owner(root) group(adm) perm(0640)
+        create_dirs(yes) dir_perm(0750)
+        create_mode(basic));
+};
+
+filter f_error {
+        level(err..emerg);
+};
+
+filter f_warning {
+        level(warn..emerg);
+};
+
+filter f_notice {
+        level(notice..emerg)
+        and facility(user) and (match(".*openvpn.*") or match(".*wireguard.*") or match(".*ipsec.*") or match(".*ospf.*"));
+};
+
+log {
+        source(s_network);
+        filter(f_error);
+        destination(d_hosts);
+};
+
+log {
+        source(s_network);
+        filter(f_warning);
+        destination(d_hosts);
+};
+
+log {
+        source(s_network);
+        filter(f_notice);
+        destination(d_hosts);
+};
+```
+
+4. Сохраните и закройте файл конфигурации.
+
+5. Создайте директории для хранения журналов: `sudo mkdir /opt/logs`
+
+6. Настройте права доступа для директории /opt/logs: `sudo chown root:adm /opt/logs && sudo chmod 0775 /opt/logs`
+
+Теперь все журналы syslog будут собираться на SRV1-MSK и храниться в файлах /opt/logs/[hostname], где hostname - это короткое или полное доменное имя машины, предоставившей соответствующие сообщения. Применены также фильтры для записи сообщений разных уровней на разные машины и для записи сообщений от служб ospf и имеющихся на устройстве служб туннелирования (ipsec, openvpn, wireguard и т.д) уровня не менее notice.
