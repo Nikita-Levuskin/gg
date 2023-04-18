@@ -1,0 +1,95 @@
+5. Для настройки VPN туннеля между FW-AMS и FW-MSK, следуйте документации вашего выбранного технологии VPN (IPsec, OpenVPN, WireGuard) и выполните следующую конфигурацию:
+
+- На FW-AMS настройте маршрут по адресу сети на стороне FW-MSK через VPN-туннель
+- На FW-MSK настройте маршрут по адресу сети на стороне FW-AMS через VPN-туннель
+- Настроить совпадающий протокол, ключ и хеш на обеих сторонах
+- Настроить фильтр пакетов на обеих сторонах, чтобы не блокировать и не натировать трафик для другого офиса. 
+
+Пример конфигурации WireGuard:
+
+**Установите WireGuard на оба сервера FW-AMS и FW-MSK**
+```
+sudo apt update
+sudo apt install wireguard
+```
+
+**Создайте приватный и публичный ключ для каждого сервера, сохраните их в файлах /etc/wireguard/privatekey и /etc/wireguard/publickey соответственно.**
+```
+sudo umask 077
+sudo wg genkey | sudo tee /etc/wireguard/privatekey | sudo wg pubkey | sudo tee /etc/wireguard/publickey
+```
+
+**Настройте `wg0.conf` на FW-AMS**
+```
+sudo touch /etc/wireguard/wg0.conf
+sudo nano /etc/wireguard/wg0.conf
+```
+Пример конфигурации `wg0.conf` на FW-AMS:
+```
+[Interface]
+PrivateKey = FW-AMS private key
+Address = 192.168.10.1/24
+ListenPort = 10000
+
+[Peer]
+PublicKey = FW-MSK public key
+AllowedIPs = 192.168.10.2/32
+PersistentKeepalive = 25
+Endpoint = FW-MSK Public IP:10000
+```
+
+**Настройте `wg0.conf` на FW-MSK**
+```
+sudo touch /etc/wireguard/wg0.conf
+sudo nano /etc/wireguard/wg0.conf
+```
+Пример конфигурации `wg0.conf` на FW-MSK:
+```
+[Interface]
+PrivateKey = FW-MSK private key
+Address = 192.168.10.2/24
+ListenPort = 10000
+
+[Peer]
+PublicKey = FW-AMS public key
+AllowedIPs = 192.168.10.1/32
+PersistentKeepalive = 25
+Endpoint = FW-AMS Public IP:10000
+```
+
+**Запустите службу WireGuard на обоих серверах**
+```
+sudo systemctl enable --now wg-quick@wg0
+sudo systemctl status wg-quick@wg0
+```
+
+**Настройте IP маршруты на FW-AMS**
+```
+sudo ip route add 192.168.20.0/24 via 192.168.10.2 dev wg0
+sudo ip route add 192.168.30.0/24 via 192.168.10.2 dev wg0
+```
+
+**Настройте IP маршруты на FW-MSK**
+```
+sudo ip route add 192.168.40.0/24 via 192.168.10.1 dev wg0
+sudo ip route add 192.168.50.0/24 via 192.168.10.1 dev wg0
+```
+
+**Настройте `iptables` на обоих серверах таким образом, чтобы трафик для другого офиса не натировался и не блокировался.**
+```
+sudo iptables -A FORWARD -i wg+ -o wg+ -j ACCEPT
+sudo iptables -A FORWARD -i wg+ -o eth0 -j DROP
+sudo iptables -A FORWARD -i eth0 -o wg+ -j DROP
+sudo iptables -A FORWARD -i eth0 -o eth0 -j DROP
+```
+
+**Сохраните текущую конфигурацию iptables и настройте автозапуск после перезагрузки системы**
+```
+iptables-save | sudo tee /etc/iptables/rules.v4
+sudo nano /etc/network/interfaces
+
+# Добавьте следующие строки конфигурации в файл:
+pre-up iptables-restore < /etc/iptables/rules.v4
+```
+
+**Проверьте VPN-туннель между FW-AMS и FW-MSK с помощью команды `ping` или утилиты `traceroute` из соответ
