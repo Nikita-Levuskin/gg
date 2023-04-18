@@ -1,0 +1,111 @@
+Настройка OSPFv2 между R0-MSK с VyOS и FW-MSK с OpnSense включает несколько шагов:
+
+1. Настройте OSPF на обоих маршрутизаторах, включая процесс OSPF, идентификатор маршрутизатора OSPF, сети, участвующие в OSPF и маршрутизацию по умолчанию.
+
+FW-MSK:
+
+```
+configure
+set protocols ospf area 0.0.0.0 network 10.10.10.0/24
+set protocols ospf area 0.0.0.0 network 192.168.10.0/24
+set protocols ospf default-information originate always
+set protocols ospf parameters router-id 10.0.0.1
+commit
+save
+exit
+```
+
+R0-MSK:
+
+```
+configure
+set protocols ospf area 0.0.0.0 network 192.168.10.0/24
+set protocols ospf area 0.0.0.0 network 192.168.20.0/24
+set protocols ospf default-information originate metric-type 2
+set protocols ospf parameters router-id 10.0.0.2
+commit
+save
+exit
+```
+
+2. Проверьте, что оба маршрутизатора получили полный список соседей OSPF и участвующие в них сети:
+
+FW-MSK:
+
+```
+show protocols ospf neighbor
+
+Neighbor ID     Pri    State           Dead Time   Address         Interface
+10.0.0.2        1      FULL/BDR        00:00:38    192.168.10.2    vtnet0
+```
+
+R0-MSK:
+
+```
+show protocols ospf neighbor
+
+Neighbor ID     Pri    State           Dead Time   Address         Interface
+10.0.0.1        1      FULL/BDR        00:00:39    192.168.10.1    eth0.10
+```
+
+3. Проверьте маршруты OSPF на обоих маршрутизаторах:
+
+FW-MSK:
+
+```
+show protocols ospf route
+
+192.168.10.0/24    OSPF          00:00:17    *10.0.0.2                  > vtnet0
+192.168.20.0/24    OSPF          00:00:17    192.168.10.2               > vtnet0
+```
+
+R0-MSK:
+
+```
+show protocols ospf route
+
+192.168.10.0/24    OSPF          00:30:18    *10.0.0.1                  > eth0.10
+default            OSPF          00:30:33    192.168.10.1               > eth0.10
+```
+
+4. Проверьте, что маршруты до LAN-MSK и SRV-MSK доступны на FW-MSK через OSPF:
+
+```
+ping LAN-MSK
+ping SRV-MSK
+```
+
+5. Убедитесь, что R0-MSK получает маршрут по умолчанию и другие необходимые маршруты от FW-MSK через OSPF:
+
+```
+show ip route
+```
+
+6. Убедитесь, что R0-MSK защищен от вброса маршрутов с интерфейсов, смотрящих в сторону сетей LAN-MSK и SRV-MSK, и FW-MSK защищен от вброса маршрутов с интерфейса DMZ-MSK. Это можно сделать с помощью фильтров входящего/исходящего трафика на обоих маршрутизаторах.
+
+FW-MSK:
+
+```
+configure
+set firewall family ipv4 filter protect-from-lan term 1 from source-address 192.168.10.0/24
+set firewall family ipv4 filter protect-from-lan term 1 from source-address 192.168.20.0/24
+set firewall family ipv4 filter protect-from-lan term 1 then discard
+set firewall family ipv4 filter protect-from-srv term 1 from source-address 10.0.0.4
+set firewall family ipv4 filter protect-from-srv term 1 then accept
+commit
+save
+exit
+```
+
+R0-MSK:
+
+```
+configure
+set firewall family ipv4 filter protect-from-fw term 1 from source-address 10.0.0.1
+set firewall family ipv4 filter protect-from-fw term 1 then accept
+commit
+save
+exit
+``` 
+
+В результате, OSPFv2 будет настроен между R0-MSK с системой VyOS и FW-MSK с системой OpnSense, FW-MSK будет получать информацию о сетеях LAN-MSK и SRV-MSK через OSPF, R0-MSK будет получать маршрут по умолчанию и другие необходимые маршруты от FW-MSK через OSPF. Оба маршрутизатора будут защищены от вброса маршрутов с интерфейсов, смотрящих в сторону сетей LAN-MSK, SRV-MSK и DMZ-MSK на FW-MSK.
