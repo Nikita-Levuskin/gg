@@ -1,0 +1,60 @@
+Шаг 1: Установка и настройка сервера NFS на SRV1–IKT
+
+1.1 Установите пакеты nfs-kernel-server и nfs-common на сервере SRV1-IKT с помощью следующей команды:
+
+```
+sudo apt update
+sudo apt install nfs-kernel-server nfs-common
+```
+
+1.2 Создайте каталогы для хранения файлов на сервере:
+
+```
+sudo mkdir -p /opt/nfs/rw
+sudo mkdir -p /opt/nfs/ro
+```
+
+1.3 Отредактируйте файл /etc/exports и добавьте следующие строки:
+
+```
+/opt/nfs/rw *(rw,sync,no_subtree_check)
+/opt/nfs/ro *(ro,sync,no_subtree_check)
+```
+
+Это настроит общий доступ для каталога /opt/nfs/rw с возможностью записи и для каталога /opt/nfs/ro только для чтения.
+
+1.4 Перезапустите сервис NFS, чтобы применить настройки:
+
+```
+sudo systemctl restart nfs-kernel-server
+```
+
+Шаг 2: Настройка клиента для доступа к общим файлам
+
+2.1 Установите пакет nfs-common на клиенте с помощью следующей команды:
+
+```
+sudo apt update
+sudo apt install nfs-common
+```
+
+2.2 Создайте каталоги для монтирования общих файлов на клиенте:
+
+```
+sudo mkdir -p /mnt/nfs/rw
+sudo mkdir -p /mnt/nfs/ro
+```
+
+2.3 Смонтируйте общую директорию с возможностью записи на клиенте:
+
+```
+sudo mount -t nfs SRV1-IKT:/opt/nfs/rw /mnt/nfs/rw
+```
+
+2.4 Смонтируйте общую директорию только для чтения на клиенте:
+
+```
+sudo mount -t nfs -o ro SRV1-IKT:/opt/nfs/ro /mnt/nfs/ro
+```
+
+Теперь каталог /opt/nfs/rw будет доступен для записи, а каталог /opt/nfs/ro – только для чтения на клиенте по протоколу NFS.
