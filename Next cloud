@@ -1,0 +1,136 @@
+Для развертывания сервера облачного хранения данных с указанными параметрами, следуйте следующим инструкциям:
+
+Шаг 1: Установка Docker и Docker Compose
+
+Перед тем, как начать развертывание сервера, вам необходимо установить Docker и Docker Compose на сервер.
+
+Установите Docker и Docker Compose, выполнив следующие команды:
+
+```
+sudo apt update
+sudo apt install docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+Команда `apt update` обновляет список пакетов.
+
+Команда `apt install docker.io` устанавливает пакет Docker.
+
+Команда `systemctl start docker` запускает Docker.
+
+Команда `systemctl enable docker` настраивает Docker, чтобы он запускался при каждом запуске системы.
+
+Шаг 2: Создание директории и файлов
+
+Создайте новую директорию с именем "nextcloud" с помощью команды:
+
+```
+mkdir nextcloud
+cd nextcloud
+```
+
+Затем создайте файл `docker-compose.yml`, который будет содержать конфигурацию для контейнеров Docker, используемых для развертывания сервера облачного хранения NextCloud:
+
+```
+version: '3'
+
+services:
+  db:
+    image: mariadb:latest
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud_user
+      - MYSQL_PASSWORD=nextcloud_password
+
+  app:
+    image: nextcloud:latest
+    restart: always
+    ports:
+      - 8080:80
+    volumes:
+      - nextcloud:/var/www/html
+      - /mnt/data:/mnt/data
+    depends_on:
+      - db
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    ports:
+      - 8888:80
+    environment:
+      - PMA_HOST=db
+      - MYSQL_ROOT_PASSWORD=root_password
+    depends_on:
+      - db
+
+volumes:
+  nextcloud:
+  db:
+```
+
+
+Шаг 3: Запуск контейнеров Docker
+
+Запустите контейнеры Docker с помощью команды:
+
+```
+docker-compose up -d
+```
+
+Пара слов о файле docker-compose.yml:
+Секция services содержит три сервиса: БД, NextCloud и phpMyAdmin.
+- Сервис БД использует образ mariadb:latest, настраивает параметры и окружение и монтирует том db:/var/lib/mysql в хостовую директорию.
+- Сервис NextCloud использует образ nextcloud:latest, настраивает параметры и окружение, монтирует том nextcloud:/var/www/html в хостовую директорию и выставляет порт 8080 наружу.
+- Сервис phpMyAdmin использует образ phpmyadmin/phpmyadmin:latest, настраивает параметры и окружение, и выставляет порт 8888 наружу.
+
+
+Шаг 4: Проверка работоспособности контейнеров
+
+После запуска контейнеров вы можете проверить работоспособность NextCloud, phpMyAdmin и БД.
+
+Для проверки работоспособности NextCloud перейдите в веб-браузере на страницу http://IP_адрес_сервера:8080, где IP_адрес_сервера - IP-адрес сервера облачного хранения. Вы увидите страницу входа в NextCloud, где вы можете создать учетную запись, настройте доступ к облаку и управлять своими файлами.
+
+Для проверки работоспособности phpMyAdmin перейдите в веб-браузере на страницу http://IP_адрес_сервера:8888, где IP_адрес_сервера – IP-адрес сервера облачного хранения. Вы увидите страницу входа в phpMyAdmin, где необходимо ввести имя пользователя и пароль, которые были настроены в файле docker-compose.yml.
+
+Шаг 5: Автоматический запуск контейнеров после перезагрузки
+
+Чтобы контейнеры автоматически запускались после перезагрузки, создайте файл /etc/systemd/system/docker-compose.service со следующим содержимым:
+
+```
+[Unit]
+Description=Docker Compose
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/путь/к/docker-compose.yml
+ExecStart=/usr/local/bin/docker-compose up -d
+ExecStop=/usr/local/bin/docker-compose down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Этот файл определяет новый сервис systemd под названием docker-compose, использующее файл docker-compose.yml для запуска и остановки контейнеров.
+
+Выполните следующие команды для запуска нового сервиса:
+
+```
+sudo systemctl daemon-reload
+sudo systemctl enable docker-compose
+sudo systemctl start docker-compose
+```
+
+Теперь после перезагрузки сервера контейнеры автоматически запустятся.
+
+Поздравляем, вы развернули сервер облачного хранения данных с использованием контейнеров Docker, настроили автоматический запуск контейнеров после перезагрузки и проверили работоспособность NextCloud, phpMyAdmin и БД.
